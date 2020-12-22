@@ -53,10 +53,10 @@ public class AsymmetricCipherTest {
     }
 
     private void testEncryptDecrypt(byte[] data) throws CryptoException {
-        final CryptoPacket cryptoPacket = cipher.encrypt(data, PRIVATE_KEY_BASE64);
+        final CryptoPacket cryptoPacket = cipher.encrypt(data, PUBLIC_KEY_BASE64);
 
         // Convert the data into a byte array that can be readily reconstituted at the other end.
-        final byte[] outputBytes = cipher.decrypt(cryptoPacket, PUBLIC_KEY_BASE64);
+        final byte[] outputBytes = cipher.decrypt(cryptoPacket, PRIVATE_KEY_BASE64);
 
         Assert.assertArrayEquals(data, outputBytes);
     }
