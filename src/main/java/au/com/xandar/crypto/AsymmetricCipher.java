@@ -58,13 +58,13 @@ public final class AsymmetricCipher {
      * then entire output is collated in the returned CryptoPacket.
      *
      * @param data              Data to encrypt.
-     * @param privateKeyBase64  Base64 encoded PrivateKey to use to encrypt the symmetric key.
+     * @param publicKeyBase64  Base64 encoded PrivateKey to use to encrypt the symmetric key.
      * @return CryptoPacket containing the encrypted data, encrypted symmetric key and symmetric cipher IV.
      * @throws CryptoException if the data could not be encrypted.
      */
-    public CryptoPacket encrypt(byte[] data, String privateKeyBase64) throws CryptoException {
+    public CryptoPacket encrypt(byte[] data, String publicKeyBase64) throws CryptoException {
         final RSAKeyPairGenerator rsaGenerator = new RSAKeyPairGenerator();
-        final PrivateKey privateKey = rsaGenerator.getPrivateKeyFromBase64String(privateKeyBase64);
+        final PublicKey privateKey = rsaGenerator.getPublicKeyFromBase64String(publicKeyBase64);
         return encrypt(data, privateKey);
     }
 
@@ -75,11 +75,11 @@ public final class AsymmetricCipher {
      * then entire output is collated in the returned CryptoPacket.
      *
      * @param data          Data to encrypt.
-     * @param privateKey    PrivateKey to use to encrypt the randomly generated symmetric key.
+     * @param publicKey    PrivateKey to use to encrypt the randomly generated symmetric key.
      * @return CryptoPacket containing the encrypted data, encrypted symmetric key and symmetric cipher IV.
      * @throws CryptoException if the data could not be encrypted.
      */
-    private CryptoPacket encrypt(byte[] data, PrivateKey privateKey) throws CryptoException {
+    private CryptoPacket encrypt(byte[] data, PublicKey publicKey) throws CryptoException {
         // Create random symmetric key
         final SymmetricKeyFactory keyFactory = new SymmetricKeyFactory();
         final SecretKey symmetricKey = keyFactory.generateRandomKey();
@@ -109,7 +109,7 @@ public final class AsymmetricCipher {
         final byte[] encryptedSymmetricKey;
         try {
             rsaCipher = Cipher.getInstance(publicKeyCipherName);
-            rsaCipher.init(Cipher.ENCRYPT_MODE, privateKey);
+            rsaCipher.init(Cipher.ENCRYPT_MODE, publicKey);
             final byte[] rawSymmetricKey = keyFactory.getRawKey(symmetricKey);
             encryptedSymmetricKey = rsaCipher.doFinal(rawSymmetricKey);
         } catch (NoSuchAlgorithmException e) {
@@ -134,16 +134,16 @@ public final class AsymmetricCipher {
      * Decrypts a CryptoPacket using a Base64 encoded PublicKey.
      *
      * @param cryptoPacket           CryptoPacket containing the encrypted data, encrypted symmetric key and symmetric cipher IV.
-     * @param publicKeyBase64   Base64 encoding of the PublicKey to use to decrypt the symmetric key.
+     * @param privateKeyBase64   Base64 encoding of the PublicKey to use to decrypt the symmetric key.
      * @return byte array of the decrypted data.
      * @throws CryptoException if the publicKey cannot decrypt the encrypted symmetric key,
      *      or the symmetric key cannot decrypt the data,
      *      or the Base64 encoded PublicKey cannot be decoded.
      */
-    public byte[] decrypt(CryptoPacket cryptoPacket, String publicKeyBase64) throws CryptoException {
+    public byte[] decrypt(CryptoPacket cryptoPacket, String privateKeyBase64) throws CryptoException {
         // Decrypt cryptoPacket#encryptedSymmetricKey using asymmetricKey
         final RSAKeyPairGenerator rsaGenerator = new RSAKeyPairGenerator();
-        final PublicKey publicKey = rsaGenerator.getPublicKeyFromBase64String(publicKeyBase64);
+        final PrivateKey publicKey = rsaGenerator.getPrivateKeyFromBase64String(privateKeyBase64);
         return decrypt(cryptoPacket, publicKey);
     }
 
@@ -153,17 +153,17 @@ public final class AsymmetricCipher {
      * Decrypts a CryptoPacket using a PublicKey.
      *
      * @param cryptoPacket       CryptoPacket containing the encrypted data, encrypted symmetric key and symmetric cipher IV.
-     * @param publicKey     PublicKey to use to decrypt the encrypted symmetric key.
+     * @param privateKey     PublicKey to use to decrypt the encrypted symmetric key.
      * @return byte array of the decrypted data.
      * @throws CryptoException if the publicKey cannot decrypt the encrypted symmetric key, or the symmetric key cannot decrypt the data.
      */
-    private byte[] decrypt(CryptoPacket cryptoPacket, PublicKey publicKey) throws CryptoException {
+    private byte[] decrypt(CryptoPacket cryptoPacket, PrivateKey privateKey) throws CryptoException {
         // Decrypt cryptoPacket#encryptedSymmetricKey using asymmetricKey
         final SecretKey symmetricKey;
         try {
             // asymmetric public/private key cipher
             final Cipher rsaCipher = Cipher.getInstance(publicKeyCipherName);
-            rsaCipher.init(Cipher.DECRYPT_MODE, publicKey);
+            rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
             final byte[] encryptedSymmetricKey = cryptoPacket.getEncryptedSymmetricKey();
             final byte[] rawSymmetricKey = rsaCipher.doFinal(encryptedSymmetricKey);
 
